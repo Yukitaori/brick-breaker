@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BRICK BREAKER</title>
+    <link rel="stylesheet" href="style.css"></link>
+  </head>
+  <body>
+    <header>
+      <h1>Brick Breaker</h1>
+    </header>
+    <main id="main">
+      <div id="newGameDiv">
+        <button id="newGameButton">New game</button>
+        <button class="info" id="info">Info</button>
+      </div>
+      <div id="gameDiv">
+        <canvas id="gameCanvas" width="700px" height="300px">
+          This is a game of brick breaker
+        </canvas>
+      </div>
+      <div id="controlDiv" class="hidden">
+        <button id="resetButton">
+          Reset
+        </button>
+      </div>
+    </main>
+  </body>
+  <script type="module" src="./index.js"></script>
+</html>
