@@ -2,19 +2,21 @@ export default class Game {
   constructor(ball, bar) {
     this.ball = ball;
     this.bar = bar;
-    this.speedX = 20;
-    this.speedY = 20;
+    this.speedX = 0;
+    this.speedY = 0;
     this.canvas = document.getElementById("gameCanvas");
     if (this.canvas.getContext) {
       this.ctx = this.canvas.getContext("2d");
     }
     this.leftBoundary = 0;
-    this.rigthtBoundary = this.canvas.width;
+    this.rightBoundary = this.canvas.width;
     this.topBoundary = 0;
     this.bottomBoundary = this.canvas.height;
+    this.isMoving = false;
+    this.renderDelay = 10;
   }
 
-  checkIfCollision(newX, newY) {
+  checkIfCollisionWithWall(newX, newY) {
     const { top, bottom, left, right } = this.getBoundaries(newX, newY);
     const collision = [];
     if (top <= 0) {
@@ -26,58 +28,120 @@ export default class Game {
     if (left <= 0) {
       collision.push("left");
     }
-    if (right >= this.rigthtBoundary) {
+    if (right >= this.rightBoundary) {
       collision.push("right");
     }
-
     console.log(collision);
     return collision;
   }
 
-  keyDown(key) {
-    if (key === "ArrowRight") {
-      this.bar.move("R");
-    }
-    if (key === "ArrowLeft") {
-      this.bar.move("L");
-    }
-    if (key === " ") {
-      this.ball.launch(key);
-    }
+  drawElements() {
+    this.ball.draw();
+    this.bar.draw();
   }
 
-  keyUp(key) {}
-
-  getBoundaries(x, y) {
-    const top = y;
-    const bottom = y + this.width;
-    const left = x + this.width / 2;
-    const right = x + this.length + this.width / 2;
-    return { top, bottom, left, right };
-  }
-
-  getCoordinates(x, y, direction, speedX = this.speedX) {
+  getNewCoordinates(element) {
+    let x = element.x;
+    let y = element.y;
     let newX = x;
     let newY = y;
+    const direction = element.direction;
+    const speedX = element.speedX;
+    const speedY = element.speedY;
 
-    if (direction === "L") {
-      newX = x - speedX;
-    }
-    if (direction === "R") {
+    if (direction === "L" || direction === "R") {
       newX = x + speedX;
     }
+    if (
+      direction === "LU" ||
+      direction === "RU" ||
+      direction === "LD" ||
+      direction === "RD"
+    ) {
+      newX = x + speedX;
+      newY = y + speedY;
+    }
 
+    if (direction === "U" || direction === "D") {
+      newY = y + speedY;
+    }
+    console.log(newX, newY, direction, speedX, speedY);
     return { newX, newY };
   }
 
+  keyDown() {
+    // TODO Gérer la persistence des touches pressées lors de l'appui sur une nouvelle touche
+    if (window.pressedKeys["ArrowRight"] && !window.pressedKeys["ArrowLeft"]) {
+      this.bar.isMoving = true;
+      this.bar.speedX = 5;
+      this.bar.direction = "R";
+    }
+    if (window.pressedKeys["ArrowLeft"] && !window.pressedKeys["ArrowRight"]) {
+      this.bar.isMoving = true;
+      this.bar.speedX = -5;
+      this.bar.direction = "L";
+    }
+    if (window.pressedKeys[" "]) {
+      if (!this.ball.isMoving) {
+        this.ball.launch();
+      }
+    }
+  }
+
+  keyUp() {
+    if (!window.pressedKeys["ArrowLeft"] && !window.pressedKeys["ArrowRight"]) {
+      this.bar.isMoving = false;
+    }
+  }
+
+  move(newX, newY) {
+    this.setCoordinates(newX, newY);
+    const { top, bottom, left, right } = this.getBoundaries(newX, newY);
+    this.setBoundaries(top, bottom, left, right);
+  }
+
+  moveElements() {
+    // On bouge d'abord la barre
+    if (this.bar.isMoving) {
+      let { newX, newY } = this.getNewCoordinates(this.bar);
+      const collisionWithWall = this.bar.checkIfCollisionWithWall(newX, newY);
+
+      if (collisionWithWall.length >= 1) {
+        const coordinatesAfterCollision = this.bar.manageCollisionWithWall(
+          collisionWithWall[0]
+        );
+        newX = coordinatesAfterCollision.newX;
+        newY = coordinatesAfterCollision.newY;
+      }
+
+      this.bar.move(newX, newY);
+    }
+
+    // Puis on bouge la balle
+    if (this.ball.isMoving) {
+      let { newX, newY } = this.getNewCoordinates(this.ball);
+      const collisionWithWall = this.ball.checkIfCollisionWithWall(newX, newY);
+
+      if (collisionWithWall.length >= 1) {
+        // TODO Gérer avec un foreach
+        const coordinatesAfterCollision = this.ball.manageCollisionWithWall(
+          collisionWithWall[0]
+        );
+        newX = coordinatesAfterCollision.newX;
+        newY = coordinatesAfterCollision.newY;
+      }
+      this.ball.move(newX, newY);
+    }
+  }
+
   renderCanvas() {
-    this.ctx.clearRect(0, 0, this.rigthtBoundary, this.bottomBoundary);
-    this.ball.draw(this.ball.x, this.ball.y);
-    this.bar.draw(this.bar.x, this.bar.y);
+    this.ctx.clearRect(0, 0, this.rightBoundary, this.bottomBoundary);
+    this.moveElements();
+    this.drawElements();
   }
 
   setAutoRender() {
-    const render = setInterval(() => this.renderCanvas(), 10);
+    const render = setInterval(() => this.renderCanvas(), this.renderDelay);
     window.renders.push(render);
   }
 

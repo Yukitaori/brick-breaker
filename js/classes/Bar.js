@@ -9,9 +9,13 @@ export default class Bar extends Game {
     this.defaultY = defaultY;
     this.length = length;
     this.width = width;
+    this.speedX = 0;
+    this.speedY = 0;
   }
 
-  draw(x = this.x, y = this.y) {
+  draw() {
+    const x = this.x;
+    const y = this.y;
     const ctx = this.ctx;
 
     ctx.beginPath();
@@ -30,36 +34,27 @@ export default class Bar extends Game {
     ctx.fill();
   }
 
-  manageCollision(side) {
+  getBoundaries(x, y) {
+    const top = y;
+    const bottom = y - this.width;
+    const left = x - this.width / 2;
+    const right = x + this.length + this.width / 2;
+    return { top, bottom, left, right };
+  }
+
+  manageCollisionWithWall(side) {
     let newX = this.x;
+    let newY = this.y;
     switch (side) {
       case "left":
         newX = this.leftBoundary + this.width / 2;
         break;
       case "right":
-        newX = this.rigthtBoundary - this.width / 2 - this.length;
+        newX = this.rightBoundary - this.width / 2 - this.length;
         break;
-
       default:
         break;
     }
-    return newX;
-  }
-
-  move(direction) {
-    let { newX, newY } = this.getCoordinates(this.x, this.y, direction);
-    const collision = this.checkIfCollision(newX, newY);
-
-    if (collision.length >= 1) {
-      newX = this.manageCollision(collision[0]);
-      this.setCoordinates(newX, newY);
-      const { top, bottom, left, right } = this.getBoundaries(newX, newY);
-      this.setBoundaries(top, bottom, left, right);
-      return console.log(collision);
-    } else {
-      const { top, bottom, left, right } = this.getBoundaries(newX, newY);
-      this.setCoordinates(newX, newY);
-      this.setBoundaries(top, bottom, left, right);
-    }
+    return { newX, newY };
   }
 }

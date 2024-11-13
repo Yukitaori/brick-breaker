@@ -7,10 +7,23 @@ function setNewGame() {
   window.renders.forEach((render) => {
     clearInterval(render);
   });
+
   const bar = new Bar(330, 260, 40, 10);
   const ball = new Ball(350, 250, 20);
   const game = new Game(ball, bar);
   game.setAutoRender();
+
+  window.pressedKeys = {};
+  window.addEventListener("keydown", (e) => {
+    // TODO Gérer le delay entre la première pression et la seconde
+    window.pressedKeys[e.key] = true;
+    game.keyDown();
+  });
+  window.addEventListener("keyup", (e) => {
+    window.pressedKeys[e.key] = false;
+    game.keyUp();
+  });
+
   return game;
 }
 
