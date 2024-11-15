@@ -68,12 +68,35 @@ export default class Ball extends Game {
         newY = this.topBoundary + this.width / 2;
         break;
       case "bottom":
+        // TODO Game Over ici
         this.speedY = -this.speedY;
         this.direction = this.direction.replace("D", "U");
         newY = this.bottomBoundary - this.width / 2;
         break;
       default:
         break;
+    }
+    return { newX, newY };
+  }
+
+  manageCollisionWithBar(side, bar) {
+    let newX = this.x;
+    let newY = this.y;
+    const { top: barTop, bottom: barBottom, left: barLeft, right: barRight } = bar.getBoundaries(bar.x, bar.y);
+    switch (side) {
+      case "left":
+        
+      break;
+      case "right":
+        
+      break;
+      case "bottom":
+        this.speedY = -this.speedY;
+        this.direction = this.direction.replace("U", "D");
+        newY = barTop - this.width / 2;
+        break;
+      default:
+      break;
     }
     return { newX, newY };
   }

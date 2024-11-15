@@ -13,7 +13,17 @@ export default class Game {
     this.topBoundary = 0;
     this.bottomBoundary = this.canvas.height;
     this.isMoving = false;
-    this.renderDelay = 10;
+    this.renderDelay = 20;
+  }
+
+  checkIfCollisionWithBar(newX, newY, bar) {
+    const { top, bottom, left, right } = this.getBoundaries(newX, newY);
+    const { top: barTop, bottom: barBottom, left: barLeft, right: barRight } = bar.getBoundaries(bar.x, bar.y);
+    const collision = [];
+    if (bottom >= barTop && (left <= barRight && left >= barLeft || right >= barLeft && right <= barRight)) {
+      collision.push("bottom");
+    }
+  return collision;
   }
 
   checkIfCollisionWithWall(newX, newY) {
@@ -31,7 +41,6 @@ export default class Game {
     if (right >= this.rightBoundary) {
       collision.push("right");
     }
-    console.log(collision);
     return collision;
   }
 
@@ -65,7 +74,7 @@ export default class Game {
     if (direction === "U" || direction === "D") {
       newY = y + speedY;
     }
-    console.log(newX, newY, direction, speedX, speedY);
+    // console.log(newX, newY, direction, speedX, speedY);
     return { newX, newY };
   }
 
@@ -73,12 +82,12 @@ export default class Game {
     // TODO Gérer la persistence des touches pressées lors de l'appui sur une nouvelle touche
     if (window.pressedKeys["ArrowRight"] && !window.pressedKeys["ArrowLeft"]) {
       this.bar.isMoving = true;
-      this.bar.speedX = 5;
+      this.bar.speedX = 10;
       this.bar.direction = "R";
     }
     if (window.pressedKeys["ArrowLeft"] && !window.pressedKeys["ArrowRight"]) {
       this.bar.isMoving = true;
-      this.bar.speedX = -5;
+      this.bar.speedX = -10;
       this.bar.direction = "L";
     }
     if (window.pressedKeys[" "]) {
@@ -130,6 +139,19 @@ export default class Game {
         newX = coordinatesAfterCollision.newX;
         newY = coordinatesAfterCollision.newY;
       }
+
+      const collisionWithBar = this.ball.checkIfCollisionWithBar(newX, newY, this.bar);
+
+      if (collisionWithBar.length >= 1) {
+
+        for (let collision of collisionWithBar) {
+          const coordinatesAfterCollision = this.ball.manageCollisionWithBar(collision, this.bar);
+          newX = coordinatesAfterCollision.newX;
+          newY = coordinatesAfterCollision.newY;
+        }
+
+      }
+
       this.ball.move(newX, newY);
     }
   }
