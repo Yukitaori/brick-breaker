@@ -30,6 +30,18 @@ export default class Ball extends Game {
     return { top, bottom, left, right };
   }
 
+  getCollisionAngle(newX, newY, bar) {
+    if (newX === bar.x + bar.length / 2) {
+      // la balle tape pile au milieu
+    }
+    if (newX > bar.x + bar.length / 2) {
+      // la balle tape sur la droite de la barre
+    }
+    if (newX < bar.x + bar.length / 2) {
+      // la balle tape sur la gauche de la barre
+    }
+  }
+
   launch() {
     this.isMoving = true;
     this.speedY = -5;

@@ -23,7 +23,7 @@ export default class Game {
     if (bottom >= barTop && (left <= barRight && left >= barLeft || right >= barLeft && right <= barRight)) {
       collision.push("bottom");
     }
-  return collision;
+    return collision;
   }
 
   checkIfCollisionWithWall(newX, newY) {
