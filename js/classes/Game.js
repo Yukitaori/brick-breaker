@@ -1,7 +1,10 @@
+import { setNewGame, alertModal, rulesModal } from "../functions.js";
+
 export default class Game {
-  constructor(ball, bar) {
+  constructor(ball, bar, bricks) {
     this.ball = ball;
     this.bar = bar;
+    this.bricks = bricks;
     this.speedX = 0;
     this.speedY = 0;
     this.canvas = document.getElementById("gameCanvas");
@@ -20,8 +23,34 @@ export default class Game {
     const { top, bottom, left, right } = this.getBoundaries(newX, newY);
     const { top: barTop, bottom: barBottom, left: barLeft, right: barRight } = bar.getBoundaries(bar.x, bar.y);
     const collision = [];
-    if (bottom >= barTop && (left <= barRight && left >= barLeft || right >= barLeft && right <= barRight)) {
+    if (bottom >= barTop && (left <= barRight && left >= barLeft || right >= barLeft && right <= barRight) && top <= barTop) {
       collision.push("bottom");
+    }
+    return collision;
+  }
+
+  checkIfCollisionWithBricks(newX, newY, bricks) {
+    const { top, bottom, left, right } = this.getBoundaries(newX, newY);
+    const collision = [];
+    for (let brick of bricks) {
+      if (brick.state === 0) {
+        continue;
+      }
+      const { top: brickTop, bottom: brickBottom, left: brickLeft, right: brickRight } = brick.getBoundaries(brick.x, brick.y);
+      if (bottom >= brickTop && 
+        top <= brickTop &&
+        (left <= brickRight && left >= brickLeft || right >= brickLeft && right <= brickRight) &&
+        this.speedY > 0) {
+        collision.push({brick, side: "bottom"});
+        break;
+      }
+      if (top <= brickBottom &&
+        bottom >= brickBottom &&
+        (left <= brickRight && left >= brickLeft || right >= brickLeft && right <= brickRight) &&
+        this.speedY < 0) {
+        collision.push({brick, side: "top"});
+        break;
+      }
     }
     return collision;
   }
@@ -44,9 +73,21 @@ export default class Game {
     return collision;
   }
 
+  cleanGame() {
+    this.ctx.clearRect(0, 0, this.rightBoundary, this.bottomBoundary);
+  }
+
   drawElements() {
     this.ball.draw();
     this.bar.draw();
+    this.bricks.map((brick) => brick.draw());
+  }
+
+  async gameOver() {
+    const confirmation = await alertModal("Game Over", "OK");
+    if (confirmation) {
+      this.newGame();
+    }
   }
 
   getNewCoordinates(element) {
@@ -54,27 +95,11 @@ export default class Game {
     let y = element.y;
     let newX = x;
     let newY = y;
-    const direction = element.direction;
     const speedX = element.speedX;
     const speedY = element.speedY;
 
-    if (direction === "L" || direction === "R") {
-      newX = x + speedX;
-    }
-    if (
-      direction === "LU" ||
-      direction === "RU" ||
-      direction === "LD" ||
-      direction === "RD"
-    ) {
-      newX = x + speedX;
-      newY = y + speedY;
-    }
-
-    if (direction === "U" || direction === "D") {
-      newY = y + speedY;
-    }
-    // console.log(newX, newY, direction, speedX, speedY);
+    newX = x + speedX;
+    newY = y + speedY;
     return { newX, newY };
   }
 
@@ -83,12 +108,10 @@ export default class Game {
     if (window.pressedKeys["ArrowRight"] && !window.pressedKeys["ArrowLeft"]) {
       this.bar.isMoving = true;
       this.bar.speedX = 10;
-      this.bar.direction = "R";
     }
     if (window.pressedKeys["ArrowLeft"] && !window.pressedKeys["ArrowRight"]) {
       this.bar.isMoving = true;
       this.bar.speedX = -10;
-      this.bar.direction = "L";
     }
     if (window.pressedKeys[" "]) {
       if (!this.ball.isMoving) {
@@ -114,7 +137,6 @@ export default class Game {
     if (this.bar.isMoving) {
       let { newX, newY } = this.getNewCoordinates(this.bar);
       const collisionWithWall = this.bar.checkIfCollisionWithWall(newX, newY);
-
       if (collisionWithWall.length >= 1) {
         const coordinatesAfterCollision = this.bar.manageCollisionWithWall(
           collisionWithWall[0]
@@ -130,6 +152,16 @@ export default class Game {
     if (this.ball.isMoving) {
       let { newX, newY } = this.getNewCoordinates(this.ball);
       const collisionWithWall = this.ball.checkIfCollisionWithWall(newX, newY);
+      const collisionWithBrick = this.ball.checkIfCollisionWithBricks(newX, newY, this.bricks);
+
+      if (collisionWithBrick.length >= 1) {
+        const coordinatesAfterCollision = this.ball.manageCollisionWithBrick(
+          collisionWithBrick[0].side,
+          collisionWithBrick[0].brick,
+        );
+        newX = coordinatesAfterCollision.newX;
+        newY = coordinatesAfterCollision.newY;
+      }
 
       if (collisionWithWall.length >= 1) {
         // TODO Gérer avec un foreach
@@ -143,21 +175,28 @@ export default class Game {
       const collisionWithBar = this.ball.checkIfCollisionWithBar(newX, newY, this.bar);
 
       if (collisionWithBar.length >= 1) {
-
         for (let collision of collisionWithBar) {
           const coordinatesAfterCollision = this.ball.manageCollisionWithBar(collision, this.bar);
           newX = coordinatesAfterCollision.newX;
           newY = coordinatesAfterCollision.newY;
         }
+      }
 
+      if (!this.bricks.find((brick) => brick.state > 0)) {
+        this.ball.isMoving = false;
+        this.winGame();
       }
 
       this.ball.move(newX, newY);
     }
   }
 
+  newGame() {
+    setNewGame();
+  }
+
   renderCanvas() {
-    this.ctx.clearRect(0, 0, this.rightBoundary, this.bottomBoundary);
+    this.cleanGame();
     this.moveElements();
     this.drawElements();
   }
@@ -177,5 +216,12 @@ export default class Game {
   setCoordinates(newX, newY) {
     this.x = newX;
     this.y = newY;
+  }
+
+  async winGame() {
+    const confirmation = await alertModal("You win !", "OK");
+    if (confirmation) {
+      this.newGame();
+    }
   }
 }

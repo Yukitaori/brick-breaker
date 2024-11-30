@@ -36,7 +36,7 @@ export default class Bar extends Game {
 
   getBoundaries(x, y) {
     const top = y;
-    const bottom = y - this.width;
+    const bottom = y + this.width;
     const left = x - this.width / 2;
     const right = x + this.length + this.width / 2;
     return { top, bottom, left, right };
