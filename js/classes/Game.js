@@ -1,20 +1,61 @@
+import { setNewGame, alertModal, rulesModal } from "../functions.js";
+
 export default class Game {
-  constructor(ball, bar) {
+  constructor(ball, bar, bricks) {
     this.ball = ball;
     this.bar = bar;
-    this.speedX = 20;
-    this.speedY = 20;
+    this.bricks = bricks;
+    this.speedX = 0;
+    this.speedY = 0;
     this.canvas = document.getElementById("gameCanvas");
     if (this.canvas.getContext) {
       this.ctx = this.canvas.getContext("2d");
     }
     this.leftBoundary = 0;
-    this.rigthtBoundary = this.canvas.width;
+    this.rightBoundary = this.canvas.width;
     this.topBoundary = 0;
     this.bottomBoundary = this.canvas.height;
+    this.isMoving = false;
+    this.renderDelay = 20;
   }
 
-  checkIfCollision(newX, newY) {
+  checkIfCollisionWithBar(newX, newY, bar) {
+    const { top, bottom, left, right } = this.getBoundaries(newX, newY);
+    const { top: barTop, bottom: barBottom, left: barLeft, right: barRight } = bar.getBoundaries(bar.x, bar.y);
+    const collision = [];
+    if (bottom >= barTop && (left <= barRight && left >= barLeft || right >= barLeft && right <= barRight) && top <= barTop) {
+      collision.push("bottom");
+    }
+    return collision;
+  }
+
+  checkIfCollisionWithBricks(newX, newY, bricks) {
+    const { top, bottom, left, right } = this.getBoundaries(newX, newY);
+    const collision = [];
+    for (let brick of bricks) {
+      if (brick.state === 0) {
+        continue;
+      }
+      const { top: brickTop, bottom: brickBottom, left: brickLeft, right: brickRight } = brick.getBoundaries(brick.x, brick.y);
+      if (bottom >= brickTop && 
+        top <= brickTop &&
+        (left <= brickRight && left >= brickLeft || right >= brickLeft && right <= brickRight) &&
+        this.speedY > 0) {
+        collision.push({brick, side: "bottom"});
+        break;
+      }
+      if (top <= brickBottom &&
+        bottom >= brickBottom &&
+        (left <= brickRight && left >= brickLeft || right >= brickLeft && right <= brickRight) &&
+        this.speedY < 0) {
+        collision.push({brick, side: "top"});
+        break;
+      }
+    }
+    return collision;
+  }
+
+  checkIfCollisionWithWall(newX, newY) {
     const { top, bottom, left, right } = this.getBoundaries(newX, newY);
     const collision = [];
     if (top <= 0) {
@@ -26,58 +67,142 @@ export default class Game {
     if (left <= 0) {
       collision.push("left");
     }
-    if (right >= this.rigthtBoundary) {
+    if (right >= this.rightBoundary) {
       collision.push("right");
     }
-
-    console.log(collision);
     return collision;
   }
 
-  keyDown(key) {
-    if (key === "ArrowRight") {
-      this.bar.move("R");
-    }
-    if (key === "ArrowLeft") {
-      this.bar.move("L");
-    }
-    if (key === " ") {
-      this.ball.launch(key);
+  cleanGame() {
+    this.ctx.clearRect(0, 0, this.rightBoundary, this.bottomBoundary);
+  }
+
+  drawElements() {
+    this.ball.draw();
+    this.bar.draw();
+    this.bricks.map((brick) => brick.draw());
+  }
+
+  async gameOver() {
+    const confirmation = await alertModal("Game Over", "OK");
+    if (confirmation) {
+      this.newGame();
     }
   }
 
-  keyUp(key) {}
-
-  getBoundaries(x, y) {
-    const top = y;
-    const bottom = y + this.width;
-    const left = x + this.width / 2;
-    const right = x + this.length + this.width / 2;
-    return { top, bottom, left, right };
-  }
-
-  getCoordinates(x, y, direction, speedX = this.speedX) {
+  getNewCoordinates(element) {
+    let x = element.x;
+    let y = element.y;
     let newX = x;
     let newY = y;
+    const speedX = element.speedX;
+    const speedY = element.speedY;
 
-    if (direction === "L") {
-      newX = x - speedX;
-    }
-    if (direction === "R") {
-      newX = x + speedX;
-    }
-
+    newX = x + speedX;
+    newY = y + speedY;
     return { newX, newY };
   }
 
+  keyDown() {
+    // TODO Gérer la persistence des touches pressées lors de l'appui sur une nouvelle touche
+    if (window.pressedKeys["ArrowRight"] && !window.pressedKeys["ArrowLeft"]) {
+      this.bar.isMoving = true;
+      this.bar.speedX = 10;
+    }
+    if (window.pressedKeys["ArrowLeft"] && !window.pressedKeys["ArrowRight"]) {
+      this.bar.isMoving = true;
+      this.bar.speedX = -10;
+    }
+    if (window.pressedKeys[" "]) {
+      if (!this.ball.isMoving) {
+        this.ball.launch();
+      }
+    }
+  }
+
+  keyUp() {
+    if (!window.pressedKeys["ArrowLeft"] && !window.pressedKeys["ArrowRight"]) {
+      this.bar.isMoving = false;
+    }
+  }
+
+  move(newX, newY) {
+    this.setCoordinates(newX, newY);
+    const { top, bottom, left, right } = this.getBoundaries(newX, newY);
+    this.setBoundaries(top, bottom, left, right);
+  }
+
+  moveElements() {
+    // On bouge d'abord la barre
+    if (this.bar.isMoving) {
+      let { newX, newY } = this.getNewCoordinates(this.bar);
+      const collisionWithWall = this.bar.checkIfCollisionWithWall(newX, newY);
+      if (collisionWithWall.length >= 1) {
+        const coordinatesAfterCollision = this.bar.manageCollisionWithWall(
+          collisionWithWall[0]
+        );
+        newX = coordinatesAfterCollision.newX;
+        newY = coordinatesAfterCollision.newY;
+      }
+
+      this.bar.move(newX, newY);
+    }
+
+    // Puis on bouge la balle
+    if (this.ball.isMoving) {
+      let { newX, newY } = this.getNewCoordinates(this.ball);
+      const collisionWithWall = this.ball.checkIfCollisionWithWall(newX, newY);
+      const collisionWithBrick = this.ball.checkIfCollisionWithBricks(newX, newY, this.bricks);
+
+      if (collisionWithBrick.length >= 1) {
+        const coordinatesAfterCollision = this.ball.manageCollisionWithBrick(
+          collisionWithBrick[0].side,
+          collisionWithBrick[0].brick,
+        );
+        newX = coordinatesAfterCollision.newX;
+        newY = coordinatesAfterCollision.newY;
+      }
+
+      if (collisionWithWall.length >= 1) {
+        // TODO Gérer avec un foreach
+        const coordinatesAfterCollision = this.ball.manageCollisionWithWall(
+          collisionWithWall[0]
+        );
+        newX = coordinatesAfterCollision.newX;
+        newY = coordinatesAfterCollision.newY;
+      }
+
+      const collisionWithBar = this.ball.checkIfCollisionWithBar(newX, newY, this.bar);
+
+      if (collisionWithBar.length >= 1) {
+        for (let collision of collisionWithBar) {
+          const coordinatesAfterCollision = this.ball.manageCollisionWithBar(collision, this.bar);
+          newX = coordinatesAfterCollision.newX;
+          newY = coordinatesAfterCollision.newY;
+        }
+      }
+
+      if (!this.bricks.find((brick) => brick.state > 0)) {
+        this.ball.isMoving = false;
+        this.winGame();
+      }
+
+      this.ball.move(newX, newY);
+    }
+  }
+
+  newGame() {
+    setNewGame();
+  }
+
   renderCanvas() {
-    this.ctx.clearRect(0, 0, this.rigthtBoundary, this.bottomBoundary);
-    this.ball.draw(this.ball.x, this.ball.y);
-    this.bar.draw(this.bar.x, this.bar.y);
+    this.cleanGame();
+    this.moveElements();
+    this.drawElements();
   }
 
   setAutoRender() {
-    const render = setInterval(() => this.renderCanvas(), 10);
+    const render = setInterval(() => this.renderCanvas(), this.renderDelay);
     window.renders.push(render);
   }
 
@@ -91,5 +216,12 @@ export default class Game {
   setCoordinates(newX, newY) {
     this.x = newX;
     this.y = newY;
+  }
+
+  async winGame() {
+    const confirmation = await alertModal("You win !", "OK");
+    if (confirmation) {
+      this.newGame();
+    }
   }
 }

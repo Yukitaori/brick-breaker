@@ -7,10 +7,28 @@ function setNewGame() {
   window.renders.forEach((render) => {
     clearInterval(render);
   });
+
   const bar = new Bar(330, 260, 40, 10);
   const ball = new Ball(350, 250, 20);
-  const game = new Game(ball, bar);
+  const bricks = [];
+  for (let x = 50; x <= 620; x = x + 50) {
+    const newBrick = new Brick(x, 100, 40, 15);
+    bricks.push(newBrick);
+  }
+  const game = new Game(ball, bar, bricks);
+
   game.setAutoRender();
+
+  window.pressedKeys = {};
+  window.addEventListener("keydown", (e) => {
+      window.pressedKeys[e.key] = true;
+      game.keyDown();
+    });
+  window.addEventListener("keyup", (e) => {
+      window.pressedKeys[e.key] = false;
+      game.keyUp();
+  });
+
   return game;
 }
 
@@ -39,12 +57,18 @@ function alertModal(alert, confirm) {
   let modalButton = document.createElement("button");
   modalButton.setAttribute("class", "modalButton");
   modalButton.innerText = confirm;
-  modalButton.addEventListener("click", removeModal);
   modal.appendChild(modalButton);
 
   function removeModal() {
     modalBg.remove();
   }
+
+    return new Promise((resolve, reject) => {
+      modalButton.addEventListener("click", () => {
+        resolve(true);
+        removeModal();
+      });
+    });
 }
 
 function rulesModal() {
