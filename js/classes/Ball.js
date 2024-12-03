@@ -11,6 +11,7 @@ export default class Ball extends Game {
     this.width = width;
     this.speedX = 0;
     this.speedY = 0;
+    this.referenceSpeed = 5;
   }
 
   draw() {
@@ -54,7 +55,7 @@ export default class Ball extends Game {
       this.speedY = -5;
       this.speedX = 5;
     } else {
-      this.speedX = 1;
+      this.speedX = 0;
       this.speedY = -5;
     }
   }
@@ -133,22 +134,107 @@ export default class Ball extends Game {
     } = bar.getBoundaries(bar.x, bar.y);
     switch (side) {
       case "left":
-        this.speedX = -this.speedX;
         newX = barRight + this.width / 2;
         break;
       case "right":
-        this.speedX = -this.speedX;
         newX = barLeft - this.width / 2;
         break;
       case "bottom":
-        this.speedY = -this.speedY;
         newY = barTop - this.width / 2;
         break;
       default:
         break;
     }
+    this.setSpeed(newX, newY, bar, side);
     return { newX, newY };
   }
 
-  setSpeed;
+  setSpeed(newX, newY, collidingElement, side) {
+    const {
+      top: collidingElementTop,
+      bottom: collidingElementBottom,
+      left: collidingElementLeft,
+      right: collidingElementRight,
+    } = collidingElement.getBoundaries(collidingElement.x, collidingElement.y);
+
+    let ratio;
+    let modifier;
+
+    switch (side) {
+      case "bottom":
+      case "top":
+        ratio =
+          ((newX + this.x) / 2 - collidingElementLeft) /
+          (collidingElementRight - collidingElementLeft);
+
+        if (this.speedX < 0) {
+          ratio = 1 - ratio;
+        }
+        if (ratio > 1) {
+          ratio = 1;
+        }
+        if (ratio < 0) {
+          ratio = 0;
+        }
+        modifier;
+        if (this.speedX === 0) {
+          modifier = (ratio - 0.5) * 2;
+        } else if (this.speedX > 0) {
+          modifier = ratio * 2;
+        } else {
+          modifier = -ratio * 2;
+        }
+        this.speedX = this.referenceSpeed * modifier;
+
+        if (this.speedX > this.referenceSpeed) {
+          this.speedX = this.referenceSpeed;
+        }
+        if (this.speedX < -this.referenceSpeed) {
+          this.speedX = -this.referenceSpeed;
+        }
+
+        this.speedY =
+          this.speedY > 0 ? -this.referenceSpeed : this.referenceSpeed;
+        break;
+
+      case "left":
+      case "right":
+        ratio =
+          ((newY + this.y) / 2 - collidingElementTop) /
+          (collidingElementBottom - collidingElementTop);
+
+        if (this.speedY < 0) {
+          ratio = 1 - ratio;
+        }
+        if (ratio > 1) {
+          ratio = 1;
+        }
+        if (ratio < 0) {
+          ratio = 0;
+        }
+        modifier;
+        if (this.speedY === 0) {
+          modifier = (ratio - 0.5) * 2;
+        } else if (this.speedY > 0) {
+          modifier = ratio * 2;
+        } else {
+          modifier = -ratio * 2;
+        }
+        this.speedY = this.referenceSpeed * modifier;
+
+        if (this.speedY > this.referenceSpeed) {
+          this.speedY = this.referenceSpeed;
+        }
+        if (this.speedY < -this.referenceSpeed) {
+          this.speedY = -this.referenceSpeed;
+        }
+
+        this.speedX =
+          this.speedX > 0 ? -this.referenceSpeed : this.referenceSpeed;
+
+        break;
+      default:
+        break;
+    }
+  }
 }
