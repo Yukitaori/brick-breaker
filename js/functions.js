@@ -21,12 +21,12 @@ function setNewGame() {
 
   window.pressedKeys = {};
   window.addEventListener("keydown", (e) => {
-      window.pressedKeys[e.key] = true;
-      game.keyDown();
-    });
+    window.pressedKeys[e.key] = true;
+    game.keyDown(e.key);
+  });
   window.addEventListener("keyup", (e) => {
-      window.pressedKeys[e.key] = false;
-      game.keyUp();
+    window.pressedKeys[e.key] = false;
+    game.keyUp();
   });
 
   return game;
@@ -63,12 +63,12 @@ function alertModal(alert, confirm) {
     modalBg.remove();
   }
 
-    return new Promise((resolve, reject) => {
-      modalButton.addEventListener("click", () => {
-        resolve(true);
-        removeModal();
-      });
+  return new Promise((resolve, reject) => {
+    modalButton.addEventListener("click", () => {
+      resolve(true);
+      removeModal();
     });
+  });
 }
 
 function rulesModal() {

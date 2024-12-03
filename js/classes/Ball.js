@@ -90,27 +90,32 @@ export default class Ball extends Game {
   manageCollisionWithBrick(side, brick) {
     let newX = this.x;
     let newY = this.y;
-    const { top: brickTop, bottom: brickBottom, left: brickLeft, right: brickRight } = brick.getBoundaries(brick.x, brick.y);
-    
+    const {
+      top: brickTop,
+      bottom: brickBottom,
+      left: brickLeft,
+      right: brickRight,
+    } = brick.getBoundaries(brick.x, brick.y);
+
     switch (side) {
       case "left":
         this.speedX = -this.speedX;
         newX = brickRight + this.width / 2;
-      break;
+        break;
       case "right":
         this.speedX = -this.speedX;
         newX = brickLeft - this.width / 2;
-      break;
+        break;
       case "bottom":
         this.speedY = -this.speedY;
         newY = brickTop - this.width / 2;
-      break;
+        break;
       case "top":
         this.speedY = -this.speedY;
         newY = brickBottom + this.width / 2;
-      break;
+        break;
       default:
-      break;
+        break;
     }
 
     brick.setState();
@@ -120,23 +125,30 @@ export default class Ball extends Game {
   manageCollisionWithBar(side, bar) {
     let newX = this.x;
     let newY = this.y;
-    const { top: barTop, bottom: barBottom, left: barLeft, right: barRight } = bar.getBoundaries(bar.x, bar.y);
+    const {
+      top: barTop,
+      bottom: barBottom,
+      left: barLeft,
+      right: barRight,
+    } = bar.getBoundaries(bar.x, bar.y);
     switch (side) {
       case "left":
         this.speedX = -this.speedX;
         newX = barRight + this.width / 2;
-      break;
+        break;
       case "right":
         this.speedX = -this.speedX;
         newX = barLeft - this.width / 2;
-      break;
+        break;
       case "bottom":
         this.speedY = -this.speedY;
         newY = barTop - this.width / 2;
         break;
       default:
-      break;
+        break;
     }
     return { newX, newY };
   }
+
+  setSpeed;
 }
