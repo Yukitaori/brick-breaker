@@ -166,33 +166,22 @@ export default class Ball extends Game {
         ratio =
           ((newX + this.x) / 2 - collidingElementLeft) /
           (collidingElementRight - collidingElementLeft);
-
-        if (this.speedX < 0) {
-          ratio = 1 - ratio;
-        }
         if (ratio > 1) {
           ratio = 1;
         }
         if (ratio < 0) {
           ratio = 0;
         }
-        modifier;
-        if (this.speedX === 0) {
-          modifier = (ratio - 0.5) * 2;
-        } else if (this.speedX > 0) {
-          modifier = ratio * 2;
-        } else {
-          modifier = -ratio * 2;
-        }
-        this.speedX = this.referenceSpeed * modifier;
 
+        ratio = ratio - 0.5;
+
+        this.speedX = this.speedX + ratio * 10;
         if (this.speedX > this.referenceSpeed) {
           this.speedX = this.referenceSpeed;
         }
         if (this.speedX < -this.referenceSpeed) {
           this.speedX = -this.referenceSpeed;
         }
-
         this.speedY =
           this.speedY > 0 ? -this.referenceSpeed : this.referenceSpeed;
         break;
@@ -203,32 +192,22 @@ export default class Ball extends Game {
           ((newY + this.y) / 2 - collidingElementTop) /
           (collidingElementBottom - collidingElementTop);
 
-        if (this.speedY < 0) {
-          ratio = 1 - ratio;
-        }
         if (ratio > 1) {
           ratio = 1;
         }
         if (ratio < 0) {
           ratio = 0;
         }
-        modifier;
-        if (this.speedY === 0) {
-          modifier = (ratio - 0.5) * 2;
-        } else if (this.speedY > 0) {
-          modifier = ratio * 2;
-        } else {
-          modifier = -ratio * 2;
-        }
-        this.speedY = this.referenceSpeed * modifier;
 
+        ratio = ratio - 0.5;
+
+        this.speedY = this.speedY + ratio * 10;
         if (this.speedY > this.referenceSpeed) {
           this.speedY = this.referenceSpeed;
         }
         if (this.speedY < -this.referenceSpeed) {
           this.speedY = -this.referenceSpeed;
         }
-
         this.speedX =
           this.speedX > 0 ? -this.referenceSpeed : this.referenceSpeed;
 
