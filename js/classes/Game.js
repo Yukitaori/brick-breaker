@@ -17,6 +17,8 @@ export default class Game {
     this.bottomBoundary = this.canvas.height;
     this.isMoving = false;
     this.renderDelay = 20;
+    this.level = 1;
+    this.score = 0;
   }
 
   checkIfCollisionWithBar(newX, newY, bar) {
@@ -124,6 +126,11 @@ export default class Game {
     return { newX, newY };
   }
 
+  initGame() {
+    this.setScore(0);
+    this.setAutoRender();
+  }
+
   keyDown(key) {
     // TODO Gérer la persistence des touches pressées lors de l'appui sur une nouvelle touche
     if (
@@ -186,21 +193,23 @@ export default class Game {
       );
 
       if (collisionWithBrick.length >= 1) {
-        const coordinatesAfterCollision = this.ball.manageCollisionWithBrick(
+        const datasAfterCollision = this.ball.manageCollisionWithBrick(
           collisionWithBrick[0].side,
           collisionWithBrick[0].brick
         );
-        newX = coordinatesAfterCollision.newX;
-        newY = coordinatesAfterCollision.newY;
+        newX = datasAfterCollision.newX;
+        newY = datasAfterCollision.newY;
+        if (datasAfterCollision.brokenBrick) {
+          this.setScore(collisionWithBrick[0].brick.points);
+        }
       }
 
       if (collisionWithWall.length >= 1) {
-        // TODO Gérer avec un foreach
-        const coordinatesAfterCollision = this.ball.manageCollisionWithWall(
+        const datasAfterCollision = this.ball.manageCollisionWithWall(
           collisionWithWall[0]
         );
-        newX = coordinatesAfterCollision.newX;
-        newY = coordinatesAfterCollision.newY;
+        newX = datasAfterCollision.newX;
+        newY = datasAfterCollision.newY;
       }
 
       const collisionWithBar = this.ball.checkIfCollisionWithBar(
@@ -211,12 +220,12 @@ export default class Game {
 
       if (collisionWithBar.length >= 1) {
         for (let collision of collisionWithBar) {
-          const coordinatesAfterCollision = this.ball.manageCollisionWithBar(
+          const datasAfterCollision = this.ball.manageCollisionWithBar(
             collision,
             this.bar
           );
-          newX = coordinatesAfterCollision.newX;
-          newY = coordinatesAfterCollision.newY;
+          newX = datasAfterCollision.newX;
+          newY = datasAfterCollision.newY;
         }
       }
 
@@ -254,6 +263,11 @@ export default class Game {
   setCoordinates(newX, newY) {
     this.x = newX;
     this.y = newY;
+  }
+
+  setScore(points) {
+    this.score += points;
+    document.getElementById("scoreDisplay").innerText = this.score;
   }
 
   async winGame() {

@@ -46,17 +46,17 @@ export default class Ball extends Game {
   launch() {
     this.isMoving = true;
     if (window.pressedKeys["ArrowRight"] && !window.pressedKeys["ArrowLeft"]) {
-      this.speedY = -5;
-      this.speedX = -5;
+      this.speedY = -this.referenceSpeed;
+      this.speedX = -this.referenceSpeed;
     } else if (
       window.pressedKeys["ArrowLeft"] &&
       !window.pressedKeys["ArrowRight"]
     ) {
-      this.speedY = -5;
-      this.speedX = 5;
+      this.speedY = -this.referenceSpeed;
+      this.speedX = this.referenceSpeed;
     } else {
       this.speedX = 0;
-      this.speedY = -5;
+      this.speedY = -this.referenceSpeed;
     }
   }
 
@@ -119,7 +119,13 @@ export default class Ball extends Game {
         break;
     }
 
-    brick.setState();
+    if (brick.setState() === 0) {
+      return {
+        newX,
+        newY,
+        brokenBrick: true,
+      };
+    }
     return { newX, newY };
   }
 
@@ -158,7 +164,6 @@ export default class Ball extends Game {
     } = collidingElement.getBoundaries(collidingElement.x, collidingElement.y);
 
     let ratio;
-    let modifier;
 
     switch (side) {
       case "bottom":
