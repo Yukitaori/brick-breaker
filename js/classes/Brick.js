@@ -1,7 +1,8 @@
+import { bricksDatas, defaultDatas } from "../datas.js";
 import Game from "./Game.js";
 
 export default class Brick extends Game {
-  constructor(defaultX, defaultY, length, width) {
+  constructor(defaultX, defaultY, length, width, kind) {
     super();
     this.x = defaultX;
     this.y = defaultY;
@@ -11,7 +12,9 @@ export default class Brick extends Game {
     this.width = width;
     this.speedX = 0;
     this.speedY = 0;
-    this.state = 1;
+    this.kind = kind;
+    this.state = bricksDatas[kind].state;
+    this.points = bricksDatas[kind].points;
     this.variant = "default";
   }
 
@@ -24,12 +27,14 @@ export default class Brick extends Game {
     const ctx = this.ctx;
 
     ctx.beginPath();
+    ctx.fillStyle = bricksDatas[this.state].color;
     ctx.moveTo(x, y);
     ctx.lineTo(x + this.length, y);
     ctx.lineTo(x + this.length, y + this.width);
     ctx.lineTo(x, y + this.width);
     ctx.lineTo(x, y);
     ctx.fill();
+    ctx.fillStyle = defaultDatas.defaultColor;
   }
 
   getBoundaries(x, y) {
@@ -42,6 +47,6 @@ export default class Brick extends Game {
 
   setState() {
     this.state = this.state - 1;
+    return this.state;
   }
-
 }

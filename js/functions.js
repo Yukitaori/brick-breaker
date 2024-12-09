@@ -2,6 +2,7 @@ import Game from "./classes/Game.js";
 import Ball from "./classes/Ball.js";
 import Bar from "./classes/Bar.js";
 import Brick from "./classes/Brick.js";
+import { levels } from "./datas.js";
 
 function setNewGame() {
   window.renders.forEach((render) => {
@@ -11,22 +12,19 @@ function setNewGame() {
   const bar = new Bar(330, 260, 40, 10);
   const ball = new Ball(350, 250, 20);
   const bricks = [];
-  for (let x = 50; x <= 620; x = x + 50) {
-    const newBrick = new Brick(x, 100, 40, 15);
-    bricks.push(newBrick);
-  }
-  const game = new Game(ball, bar, bricks);
+  levels[1].levelInitializer(bricks);
 
-  game.setAutoRender();
+  const game = new Game(ball, bar, bricks);
+  game.initGame();
 
   window.pressedKeys = {};
   window.addEventListener("keydown", (e) => {
-      window.pressedKeys[e.key] = true;
-      game.keyDown();
-    });
+    window.pressedKeys[e.key] = true;
+    game.keyDown(e.key);
+  });
   window.addEventListener("keyup", (e) => {
-      window.pressedKeys[e.key] = false;
-      game.keyUp();
+    window.pressedKeys[e.key] = false;
+    game.keyUp();
   });
 
   return game;
@@ -63,12 +61,12 @@ function alertModal(alert, confirm) {
     modalBg.remove();
   }
 
-    return new Promise((resolve, reject) => {
-      modalButton.addEventListener("click", () => {
-        resolve(true);
-        removeModal();
-      });
+  return new Promise((resolve, reject) => {
+    modalButton.addEventListener("click", () => {
+      resolve(true);
+      removeModal();
     });
+  });
 }
 
 function rulesModal() {
